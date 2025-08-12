@@ -1,0 +1,224 @@
+{% extends 'staff_layout.html' %}
+{% block title %}Upload & Process Images{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>Upload or Capture Postal Letter Image</h2>
+        <p class="text-muted">Add images to the queue, then start processing.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Upload Card -->
+        <div class="col-md-5">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <i class="fas fa-upload fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Upload Image</h5>
+                    <p class="card-text">Select one or more images from your device.</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click();">Choose Images</button>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Card -->
+        <div class="col-md-5">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <i class="fas fa-camera fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Capture Image</h5>
+                    <p class="card-text">Use your device's camera to take a photo.</p>
+                    <button class="btn btn-success" id="openCameraBtn">Open Camera</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Queue Section (Unchanged) -->
+    <div class="row mt-5 justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4><i class="fas fa-list-alt me-2"></i>Image Queue (<span id="queue-count">0</span>)</h4>
+                </div>
+                <div class="card-body" id="image-queue-body">
+                    <ul class="list-group" id="image-queue-list">
+                        <li class="list-group-item text-center text-muted" id="empty-queue-message">Your queue is empty.</li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-lg btn-info" id="startProcessingBtn" disabled>
+                        <i class="fas fa-cogs me-2"></i>Start Processing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Modal (Unchanged) -->
+    <div class="modal fade" id="cameraModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Live Camera Feed</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeCameraBtn"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <video id="camera-feed" width="100%" autoplay playsinline></video>
+                    <canvas id="camera-canvas" style="display:none;"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="captureBtn">
+                        <i class="fas fa-camera-retro"></i> Capture Photo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal (Unchanged) -->
+    <div class="modal fade" id="resultsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Processing Completed</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="resultsModalBody"></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+<!-- This 'scripts' block is where we add the JavaScript AND the CSS fix -->
+{% block scripts %}
+<style>
+    /* THIS IS THE FIX */
+    /* It targets the video feed inside the camera modal */
+    #camera-feed {
+        /* Sets the maximum height to 65% of the viewport's height */
+        max-height: 65vh;
+        /* Ensures the video maintains its aspect ratio */
+        object-fit: contain; 
+        background-color: #000; /* Optional: adds a black background */
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const queueList = document.getElementById('image-queue-list');
+    const emptyMessage = document.getElementById('empty-queue-message');
+    const queueCountSpan = document.getElementById('queue-count');
+    const startBtn = document.getElementById('startProcessingBtn');
+    
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const closeCameraBtn = document.getElementById('closeCameraBtn');
+    const videoElement = document.getElementById('camera-feed');
+    const canvasElement = document.getElementById('camera-canvas');
+    const captureBtn = document.getElementById('captureBtn');
+    let stream = null; 
+
+    let imageQueue = [];
+
+    function addFileToQueue(file) {
+        imageQueue.push(file);
+        if (imageQueue.length > 0) { emptyMessage.style.display = 'none'; }
+        const listItem = document.createElement('li');
+        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            listItem.innerHTML = `<span><img src="${e.target.result}" alt="${file.name}" width="50" class="me-3 rounded">${file.name}</span><button class="btn btn-sm btn-danger remove-btn">&times;</button>`;
+            queueList.appendChild(listItem);
+            listItem.querySelector('.remove-btn').addEventListener('click', () => {
+                const index = imageQueue.indexOf(file);
+                if (index > -1) { imageQueue.splice(index, 1); }
+                listItem.remove();
+                updateQueueState();
+            });
+        };
+        reader.readAsDataURL(file);
+        updateQueueState();
+    }
+
+    fileInput.addEventListener('change', (event) => {
+        for (const file of event.target.files) { addFileToQueue(file); }
+        fileInput.value = '';
+    });
+
+    openCameraBtn.addEventListener('click', async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            cameraModal.show();
+        } catch (err) {
+            console.error("Camera Error:", err);
+            alert("Could not access camera. Please make sure you grant permission and no other app is using it.");
+        }
+    });
+
+    captureBtn.addEventListener('click', () => {
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+        canvasElement.getContext('2d').drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+        canvasElement.toBlob((blob) => {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const capturedFile = new File([blob], `capture-${timestamp}.jpg`, { type: 'image/jpeg' });
+            addFileToQueue(capturedFile);
+        }, 'image/jpeg');
+        cameraModal.hide(); 
+    });
+
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    };
+    closeCameraBtn.addEventListener('click', stopCamera);
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
+
+    const updateQueueState = () => {
+        queueCountSpan.textContent = imageQueue.length;
+        startBtn.disabled = imageQueue.length === 0;
+        if (imageQueue.length === 0) { emptyMessage.style.display = 'block'; }
+    };
+
+    startBtn.addEventListener('click', async () => {
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+        const formData = new FormData();
+        imageQueue.forEach(file => formData.append('images[]', file));
+        try {
+            const response = await fetch("{{ url_for('process_queue') }}", { method: 'POST', body: formData });
+            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+            const results = await response.json();
+            displayResultsInModal(results);
+        } catch (error) {
+            alert('Processing failed: ' + error.message);
+        }
+        finally {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-cogs me-2"></i>Start Processing';
+            imageQueue = [];
+            queueList.innerHTML = '';
+            updateQueueState();
+        }
+    });
+
+    function displayResultsInModal(results) {
+        const modalBody = document.getElementById('resultsModalBody');
+        let tableHTML = `<table class="table table-bordered"><thead><tr><th>Picture</th><th>Extracted Address</th><th>PINCODE</th><th>Status</th></tr></thead><tbody>`;
+        results.forEach(res => {
+            const statusClass = res.status.toLowerCase() !== 'success' ? 'table-danger' : '';
+            tableHTML += `<tr class="${statusClass}"><td>${res.filename}</td><td><pre>${res.extracted_address || 'N/A'}</pre></td><td>${res.status.toLowerCase() !== 'success' ? '<input type="text" class="form-control" placeholder="Enter Pincode">' : (res.extracted_pincode || 'Not Found')}</td><td>${res.status}</td></tr>`;
+        });
+        tableHTML += '</tbody></table>';
+        modalBody.innerHTML = tableHTML;
+        new bootstrap.Modal(document.getElementById('resultsModal')).show();
+    }
+});
+</script>
+{% endblock %}

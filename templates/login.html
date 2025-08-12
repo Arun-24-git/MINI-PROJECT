@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Postal AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg-primary: #ecfeff;
+            --color-accent: #00b7c2;
+            --color-accent-hover: #128494;
+            --highlight-success: #4ef037;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --color-error: #D9534F;
+            --border-color: #d1e8ea;
+            --font-quote: 'Playfair Display', serif;
+            --font-main: 'Poppins', sans-serif;
+        }
+
+        body { 
+            font-family: var(--font-main); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- BACKGROUND PARTICLE ANIMATION --- */
+        .particle-container {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        @keyframes floatParticles {
+            from { transform: translateY(0); opacity: 0.7; }
+            to { transform: translateY(-110vh); opacity: 0; }
+        }
+        .particle {
+            position: absolute; bottom: -20px;
+            border-radius: 50%;
+            animation: floatParticles linear infinite;
+        }
+        .particle-teal { background: radial-gradient(circle, rgba(0, 183, 194, 0.4) 0%, rgba(0, 183, 194, 0) 70%); }
+        .particle-cyan { background: radial-gradient(circle, rgba(18, 132, 148, 0.4) 0%, rgba(18, 132, 148, 0) 70%); }
+        .particle-green { background: radial-gradient(circle, rgba(78, 240, 55, 0.3) 0%, rgba(78, 240, 55, 0) 70%); }
+        .particle:nth-child(1) { width: 12px; height: 12px; left: 10%; animation-duration: 15s; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 16px; height: 16px; left: 20%; animation-duration: 10s; animation-delay: 1s; }
+        .particle:nth-child(3) { width: 10px; height: 10px; left: 30%; animation-duration: 18s; animation-delay: 2s; }
+        .particle:nth-child(4) { width: 13px; height: 13px; left: 40%; animation-duration: 12s; animation-delay: 3s; }
+        .particle:nth-child(5) { width: 11px; height: 11px; left: 50%; animation-duration: 20s; animation-delay: 0.5s; }
+        .particle:nth-child(6) { width: 15px; height: 15px; left: 60%; animation-duration: 13s; animation-delay: 1.5s; }
+        .particle:nth-child(7) { width: 9px; height: 9px; left: 70%; animation-duration: 22s; animation-delay: 2.5s; }
+        .particle:nth-child(8) { width: 14px; height: 14px; left: 80%; animation-duration: 16s; animation-delay: 3.5s; }
+        .particle:nth-child(9) { width: 12px; height: 12px; left: 90%; animation-duration: 11s; animation-delay: 0.2s; }
+        .particle:nth-child(10) { width: 18px; height: 18px; left: 95%; animation-duration: 14s; animation-delay: 2.8s; }
+        .particle:nth-child(11) { width: 10px; height: 10px; left: 5%; animation-duration: 19s; animation-delay: 5s; }
+        .particle:nth-child(12) { width: 13px; height: 13px; left: 85%; animation-duration: 17s; animation-delay: 4s; }
+
+        .login-header, .main-content { position: relative; z-index: 1; }
+        .login-header { background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-color); padding: 1.25rem 2.5rem; flex-shrink: 0; }
+        .brand { color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 0.75rem; font-size: 1.25rem; font-weight: 600; }
+        .brand i { font-size: 1.5rem; color: var(--text-primary); }
+        .main-content { flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 2rem 5%; gap: 2rem; }
+        .quote-section { text-align: left; padding-left: 2rem; }
+        .quote-text { font-family: var(--font-quote); font-size: 2.5rem; line-height: 1.4; font-weight: 500; font-style: italic; color: var(--text-primary); max-width: 450px; min-height: 150px; /* Reserve space for the quote */ }
+        
+        /* --- STYLES FOR THE TYPING CURSOR --- */
+        .typed-cursor {
+            color: var(--color-accent);
+            opacity: 1;
+            animation: typed-blink 0.7s infinite;
+        }
+        @keyframes typed-blink {
+            50% { opacity: 0.0; }
+        }
+        /* --- END OF CURSOR STYLES --- */
+
+        .login-section { display: flex; justify-content: center; align-items: center; }
+        .login-container { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); padding: 2.5rem; border: 1px solid white; border-radius: 20px; box-shadow: 0 10px 40px rgba(18, 132, 148, 0.1); width: 100%; max-width: 420px; text-align: center; transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; }
+        .login-container:hover { transform: translateY(-8px); box-shadow: 0 20px 45px rgba(18, 132, 148, 0.15); }
+        .login-container h2 { color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.8rem; font-weight: 600; }
+        .login-container p { color: var(--text-secondary); margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.25rem; text-align: left; }
+        .input-wrapper { position: relative; }
+        .input-wrapper .icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .form-group input { width: 100%; padding: 12px 18px 12px 50px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 1rem; background-color: #fff; color: var(--text-primary); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .form-group input::placeholder { color: #A0AEC0; }
+        .form-group input:focus { outline: none; border-color: var(--highlight-success); box-shadow: 0 0 0 4px rgba(78, 240, 55, 0.2); }
+        .btn-login { width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: #ffffff; background-color: var(--color-accent); border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease-in-out; box-shadow: 0 4px 20px rgba(0, 183, 194, 0.3); }
+        .btn-login:hover { background-color: var(--color-accent-hover); transform: translateY(-2px); box-shadow: 0 6px 25px rgba(18, 132, 148, 0.35); }
+        .alert-danger { background-color: #ffe4e6; border-color: #f5c6cb; color: var(--color-error); }
+        @media (max-width: 992px) { .main-content { grid-template-columns: 1fr; justify-items: center; gap: 1rem; } .quote-section { text-align: center; padding-left: 0; margin-bottom: 1rem; } .quote-text { font-size: 1.8rem; min-height: 100px; } }
+    </style>
+</head>
+<body>
+    <div class="particle-container">
+        <div class="particle particle-teal"></div> <div class="particle particle-cyan"></div>
+        <div class="particle particle-teal"></div> <div class="particle particle-cyan"></div>
+        <div class="particle particle-teal"></div> <div class="particle particle-green"></div>
+        <div class="particle particle-cyan"></div> <div class="particle particle-teal"></div>
+        <div class="particle particle-cyan"></div> <div class="particle particle-teal"></div>
+        <div class="particle particle-green"></div> <div class="particle particle-cyan"></div>
+    </div>
+
+    <header class="login-header">
+        <a href="{{ url_for('index') }}" class="brand">
+            <i class="fa-solid fa-envelopes-bulk"></i>
+            <span>Postal AI</span>
+        </a>
+    </header>
+    
+    <main class="main-content">
+        <section class="quote-section">
+            <!-- The quote text is removed from here and placed in the JavaScript -->
+            <p class="quote-text">
+                <span id="typed-quote"></span>
+            </p>
+        </section>
+
+        <section class="login-section">
+            <div class="login-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <h2>Welcome Back</h2>
+                <p>Please enter your credentials to log in.</p>
+                
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="form-group">
+                        <div class="input-wrapper">
+                            <i class="fas fa-user icon"></i>
+                            <input type="text" id="username" name="username" placeholder="Username" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock icon"></i>
+                            <input type="password" id="password" name="password" placeholder="Password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-login">Login</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ADDED: The Typed.js library for the auto-typing effect -->
+    <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+
+    <!-- ADDED: Custom JavaScript to initialize the animation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // This is the configuration for the auto-typing quote
+            var options = {
+                strings: ['"Turning addresses into destinations — powered by AI."'],
+                typeSpeed: 40,  // Speed of typing in milliseconds
+                startDelay: 500, // Wait 500ms before starting
+                showCursor: true,
+                cursorChar: '|',
+                loop: false
+            };
+
+            // Initialize the animation on our target span
+            var typed = new Typed('#typed-quote', options);
+        });
+    </script>
+</body>
+</html>
