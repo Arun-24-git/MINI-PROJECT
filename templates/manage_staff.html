@@ -54,10 +54,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('manage_staff') }}">
-                            <div class="mb-3">
-                                <label for="staff_id" class="form-label">Staff ID</label>
-                                <input type="number" class="form-control" id="staff_id" name="staff_id" required>
-                            </div>
+                            <!-- Staff ID section has been removed -->
                             <div class="mb-3">
                                 <label for="staff_name" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="staff_name" name="staff_name" required>
@@ -98,7 +95,7 @@
                                         <td>{{ staff.staff_name }}</td>
                                         <td>{{ staff.username }}</td>
                                         <td>{{ staff.phone }}</td>
-                                        <td><span class="badge bg-{{ 'success' if staff.status == 'active' else 'secondary' }}">{{ staff.status }}</span></td>
+                                        <td><span class="badge bg-{{ 'success' if staff.status == 'active' else 'secondary' }}">{{ staff.status | capitalize }}</span></td>
                                         <td>{{ staff.joined_date.strftime('%Y-%m-%d') }}</td>
                                     </tr>
                                     {% else %}

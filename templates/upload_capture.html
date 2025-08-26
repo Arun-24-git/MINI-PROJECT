@@ -1,31 +1,18 @@
 {% extends 'staff_layout.html' %}
-{% block title %}Upload & Process Images{% endblock %}
+{% block title %}Capture & Process Image{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="text-center mb-4">
-        <h2>Upload or Capture Postal Letter Image</h2>
-        <p class="text-muted">Add images to the queue, then start processing.</p>
+        <h2>Capture Postal Letter Image</h2>
+        <p class="text-muted">Use the camera to add images to the queue, then start processing.</p>
     </div>
 
     <div class="row g-4 justify-content-center">
-        <!-- Upload Card -->
-        <div class="col-md-5">
+        <!-- Capture Card - Now centered and slightly wider -->
+        <div class="col-md-6">
             <div class="card h-100 text-center shadow-sm">
-                <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                    <i class="fas fa-upload fa-3x text-primary mb-3"></i>
-                    <h5 class="card-title">Upload Image</h5>
-                    <p class="card-text">Select one or more images from your device.</p>
-                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click();">Choose Images</button>
-                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
-                </div>
-            </div>
-        </div>
-
-        <!-- Capture Card -->
-        <div class="col-md-5">
-            <div class="card h-100 text-center shadow-sm">
-                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
                     <i class="fas fa-camera fa-3x text-success mb-3"></i>
                     <h5 class="card-title">Capture Image</h5>
                     <p class="card-text">Use your device's camera to take a photo.</p>
@@ -107,12 +94,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('fileInput');
+    // --- Elements related to the file upload have been removed ---
     const queueList = document.getElementById('image-queue-list');
     const emptyMessage = document.getElementById('empty-queue-message');
     const queueCountSpan = document.getElementById('queue-count');
     const startBtn = document.getElementById('startProcessingBtn');
     
+    // --- Camera Elements (Unchanged) ---
     const openCameraBtn = document.getElementById('openCameraBtn');
     const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
     const closeCameraBtn = document.getElementById('closeCameraBtn');
@@ -123,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let imageQueue = [];
 
+    // This function is now only used by the camera capture
     function addFileToQueue(file) {
         imageQueue.push(file);
         if (imageQueue.length > 0) { emptyMessage.style.display = 'none'; }
@@ -143,11 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateQueueState();
     }
 
-    fileInput.addEventListener('change', (event) => {
-        for (const file of event.target.files) { addFileToQueue(file); }
-        fileInput.value = '';
-    });
+    // --- The 'change' event listener for fileInput has been removed ---
 
+    // --- Camera Logic (Unchanged) ---
     openCameraBtn.addEventListener('click', async () => {
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -180,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     closeCameraBtn.addEventListener('click', stopCamera);
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
 
+    // --- Queue and Processing Logic (Unchanged) ---
     const updateQueueState = () => {
         queueCountSpan.textContent = imageQueue.length;
         startBtn.disabled = imageQueue.length === 0;
