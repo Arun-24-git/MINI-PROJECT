@@ -3,13 +3,14 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- (The rest of the initial HTML structure remains the same) -->
     <div class="text-center mb-4">
         <h2>Capture Postal Letter Image</h2>
         <p class="text-muted">Use the camera to add images to the queue, then start processing.</p>
     </div>
 
     <div class="row g-4 justify-content-center">
-        <!-- Capture Card - Now centered and slightly wider -->
+        <!-- Capture Card -->
         <div class="col-md-6">
             <div class="card h-100 text-center shadow-sm">
                 <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
@@ -22,7 +23,7 @@
         </div>
     </div>
 
-    <!-- Image Queue Section (Unchanged) -->
+    <!-- Image Queue Section -->
     <div class="row mt-5 justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm">
@@ -43,7 +44,7 @@
         </div>
     </div>
 
-    <!-- Camera Modal (Unchanged) -->
+    <!-- Camera Modal -->
     <div class="modal fade" id="cameraModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -51,7 +52,11 @@
                     <h5 class="modal-title">Live Camera Feed</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" id="closeCameraBtn"></button>
                 </div>
-                <div class="modal-body text-center">
+                <div class="modal-body text-center position-relative">
+                    <div id="camera-overlay">
+                        <div class="focus-box"></div>
+                        <p id="capture-instructions">Center the address in the box and hold steady</p>
+                    </div>
                     <video id="camera-feed" width="100%" autoplay playsinline></video>
                     <canvas id="camera-canvas" style="display:none;"></canvas>
                 </div>
@@ -64,54 +69,59 @@
         </div>
     </div>
 
-    <!-- Results Modal (Unchanged) -->
+    <!-- Results Modal -->
     <div class="modal fade" id="resultsModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Processing Completed</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body" id="resultsModalBody"></div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Review and Correct Pincodes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="resultsModalBody">
+                    <!-- Results table will be injected here -->
+                </div>
+                <div class="modal-footer">
+                    <div id="finalize-status" class="me-auto"></div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="finalizeBtn">
+                        <i class="fas fa-check-circle me-2"></i>Confirm & Save All
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-
-<!-- This 'scripts' block is where we add the JavaScript AND the CSS fix -->
 {% block scripts %}
 <style>
-    /* THIS IS THE FIX */
-    /* It targets the video feed inside the camera modal */
-    #camera-feed {
-        /* Sets the maximum height to 65% of the viewport's height */
-        max-height: 65vh;
-        /* Ensures the video maintains its aspect ratio */
-        object-fit: contain; 
-        background-color: #000; /* Optional: adds a black background */
-    }
+    /* (All existing styles remain the same) */
+     #camera-feed { max-height: 65vh; object-fit: contain; background-color: #000; }
+    #camera-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
+    .focus-box { width: 80%; height: 50%; border: 3px dashed rgba(255, 255, 255, 0.7); border-radius: 10px; }
+    #capture-instructions { color: white; background-color: rgba(0, 0, 0, 0.5); padding: 5px 10px; border-radius: 5px; margin-top: 15px; font-weight: bold; }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Elements related to the file upload have been removed ---
+    // (All existing constants and functions for camera and queue management remain the same)
     const queueList = document.getElementById('image-queue-list');
     const emptyMessage = document.getElementById('empty-queue-message');
     const queueCountSpan = document.getElementById('queue-count');
     const startBtn = document.getElementById('startProcessingBtn');
     
-    // --- Camera Elements (Unchanged) ---
     const openCameraBtn = document.getElementById('openCameraBtn');
     const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
     const closeCameraBtn = document.getElementById('closeCameraBtn');
     const videoElement = document.getElementById('camera-feed');
     const canvasElement = document.getElementById('camera-canvas');
     const captureBtn = document.getElementById('captureBtn');
+    const finalizeBtn = document.getElementById('finalizeBtn');
     let stream = null; 
 
     let imageQueue = [];
 
-    // This function is now only used by the camera capture
     function addFileToQueue(file) {
         imageQueue.push(file);
         if (imageQueue.length > 0) { emptyMessage.style.display = 'none'; }
@@ -132,18 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
         updateQueueState();
     }
 
-    // --- The 'change' event listener for fileInput has been removed ---
-
-    // --- Camera Logic (Unchanged) ---
     openCameraBtn.addEventListener('click', async () => {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             videoElement.srcObject = stream;
             cameraModal.show();
-        } catch (err) {
-            console.error("Camera Error:", err);
-            alert("Could not access camera. Please make sure you grant permission and no other app is using it.");
-        }
+        } catch (err) { console.error("Camera Error:", err); alert("Could not access camera."); }
     });
 
     captureBtn.addEventListener('click', () => {
@@ -154,20 +158,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const capturedFile = new File([blob], `capture-${timestamp}.jpg`, { type: 'image/jpeg' });
             addFileToQueue(capturedFile);
-        }, 'image/jpeg');
-        cameraModal.hide(); 
+            cameraModal.hide();
+        }, 'image/jpeg', 0.95);
     });
 
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-    };
+    const stopCamera = () => { if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; } };
     closeCameraBtn.addEventListener('click', stopCamera);
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
 
-    // --- Queue and Processing Logic (Unchanged) ---
     const updateQueueState = () => {
         queueCountSpan.textContent = imageQueue.length;
         startBtn.disabled = imageQueue.length === 0;
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imageQueue.forEach(file => formData.append('images[]', file));
         try {
             const response = await fetch("{{ url_for('process_queue') }}", { method: 'POST', body: formData });
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+            if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
             const results = await response.json();
             displayResultsInModal(results);
         } catch (error) {
@@ -190,23 +188,92 @@ document.addEventListener('DOMContentLoaded', function() {
         finally {
             startBtn.disabled = false;
             startBtn.innerHTML = '<i class="fas fa-cogs me-2"></i>Start Processing';
-            imageQueue = [];
-            queueList.innerHTML = '';
-            updateQueueState();
         }
     });
 
     function displayResultsInModal(results) {
         const modalBody = document.getElementById('resultsModalBody');
-        let tableHTML = `<table class="table table-bordered"><thead><tr><th>Picture</th><th>Extracted Address</th><th>PINCODE</th><th>Status</th></tr></thead><tbody>`;
+        let tableHTML = `<table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Original Filename</th>
+                                    <th>Extracted Address</th>
+                                    <th>PINCODE (Editable)</th>
+                                </tr>
+                            </thead>
+                         <tbody>`;
         results.forEach(res => {
-            const statusClass = res.status.toLowerCase() !== 'success' ? 'table-danger' : '';
-            tableHTML += `<tr class="${statusClass}"><td>${res.filename}</td><td><pre>${res.extracted_address || 'N/A'}</pre></td><td>${res.status.toLowerCase() !== 'success' ? '<input type="text" class="form-control" placeholder="Enter Pincode">' : (res.extracted_pincode || 'Not Found')}</td><td>${res.status}</td></tr>`;
+            const pincodeValue = res.extracted_pincode && res.extracted_pincode !== 'Not Found' ? res.extracted_pincode : '';
+            tableHTML += `<tr class="result-row" data-image-path="${res.image_path}" data-full-address="${res.extracted_address || ''}">
+                            <td>${res.original_filename}</td>
+                            <td><pre>${res.extracted_address || 'N/A'}</pre></td>
+                            <td>
+                                <input type="text" class="form-control pincode-input" 
+                                       value="${pincodeValue}" 
+                                       placeholder="Enter 6-digit pincode" maxlength="6">
+                            </td>
+                         </tr>`;
         });
         tableHTML += '</tbody></table>';
         modalBody.innerHTML = tableHTML;
-        new bootstrap.Modal(document.getElementById('resultsModal')).show();
+        document.getElementById('finalize-status').innerHTML = '';
+        resultsModal.show();
     }
+
+    finalizeBtn.addEventListener('click', async () => {
+        const rows = document.querySelectorAll('#resultsModalBody .result-row');
+        const parcelsToFinalize = [];
+        let hasError = false;
+
+        rows.forEach(row => {
+            const pincodeInput = row.querySelector('.pincode-input');
+            const pincode = pincodeInput.value.trim();
+            pincodeInput.classList.remove('is-invalid');
+
+            // A pincode is only invalid if it's NOT empty and NOT 6 digits. Empty is OK.
+            if (pincode && !/^\d{6}$/.test(pincode)) {
+                pincodeInput.classList.add('is-invalid');
+                hasError = true;
+            }
+
+            parcelsToFinalize.push({
+                image_path: row.dataset.imagePath,
+                pincode: pincode,
+                address: row.dataset.fullAddress
+            });
+        });
+
+        if (hasError) {
+            alert('Please correct the invalid pincodes. They must be 6 digits or left empty.');
+            return;
+        }
+
+        const statusDiv = document.getElementById('finalize-status');
+        finalizeBtn.disabled = true;
+        statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+        try {
+            const response = await fetch("{{ url_for('finalize_parcels') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parcels: parcelsToFinalize })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Failed to save data.');
+            statusDiv.innerHTML = `<span class="text-success">${result.message}</span>`;
+            setTimeout(() => {
+                resultsModal.hide();
+                imageQueue = [];
+                queueList.innerHTML = '';
+                updateQueueState();
+            }, 1500);
+
+        } catch (error) {
+            statusDiv.innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+        } finally {
+            finalizeBtn.disabled = false;
+        }
+    });
 });
 </script>
 {% endblock %}

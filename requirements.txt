@@ -1,0 +1,10 @@
+Flask
+mysql-connector-python  # Assuming this is what you use for mysql.connector
+werkzeug
+opencv-python
+numpy
+easyocr
+torch
+torchvision
+Pillow
+python-bidi

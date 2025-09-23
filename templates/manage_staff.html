@@ -15,6 +15,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
+        <!-- (Navbar content remains the same) -->
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('admin_home') }}">POSTAL AI</a>
             <div class="collapse navbar-collapse" id="adminNavbar">
@@ -53,24 +54,40 @@
                         <h5 class="mb-0">Add New Staff Member</h5>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ url_for('manage_staff') }}">
-                            <!-- Staff ID section has been removed -->
+                        <!-- === MODIFICATION: Add novalidate and a form class === -->
+                        <form method="POST" action="{{ url_for('manage_staff') }}" class="needs-validation" novalidate>
                             <div class="mb-3">
                                 <label for="staff_name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="staff_name" name="staff_name" required>
+                                <!-- === MODIFICATION: Add validation attributes === -->
+                                <input type="text" class="form-control" id="staff_name" name="staff_name" 
+                                       required minlength="2" maxlength="50" pattern="^[a-zA-Z\s]{2,50}$"
+                                       title="Name must be 2-50 characters (letters and spaces only).">
+                                <div class="invalid-feedback">Please enter a valid full name (letters and spaces only).</div>
                             </div>
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" id="phone" name="phone" required>
+                                <!-- === MODIFICATION: Add validation attributes === -->
+                                <input type="text" class="form-control" id="phone" name="phone" 
+                                       required pattern="^\d{10,13}$"
+                                       title="Phone number must be 10 to 13 digits.">
+                                <div class="invalid-feedback">Please enter a valid phone number (10-13 digits).</div>
                             </div>
                             <hr>
                             <div class="mb-3">
                                 <label for="username" class="form-label">Username</label>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <!-- === MODIFICATION: Add validation attributes === -->
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       required minlength="4" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
+                                       title="Username must be 4-20 characters (letters, numbers, underscore).">
+                                <div class="invalid-feedback">Please enter a valid username (4-20 characters, no spaces).</div>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <!-- === MODIFICATION: Add validation attributes === -->
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       required minlength="6"
+                                       title="Password must be at least 6 characters long.">
+                                <div class="invalid-feedback">Password must be at least 6 characters long.</div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Add Staff</button>
                         </form>
@@ -80,6 +97,7 @@
 
             <!-- Existing Staff List -->
             <div class="col-lg-8">
+                <!-- (This part remains the same) -->
                 <div class="card">
                     <div class="card-header"><h5 class="mb-0">Current Staff List</h5></div>
                     <div class="card-body">
@@ -96,7 +114,7 @@
                                         <td>{{ staff.username }}</td>
                                         <td>{{ staff.phone }}</td>
                                         <td><span class="badge bg-{{ 'success' if staff.status == 'active' else 'secondary' }}">{{ staff.status | capitalize }}</span></td>
-                                        <td>{{ staff.joined_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ staff.joined_date.strftime('%Y-%m-d') }}</td>
                                     </tr>
                                     {% else %}
                                         <tr><td colspan="6" class="text-center text-muted">No staff members in the database.</td></tr>
@@ -110,5 +128,28 @@
         </div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- === MODIFICATION: Add Bootstrap validation script === -->
+    <script>
+        // Example starter JavaScript for disabling form submissions if there are invalid fields
+        (() => {
+          'use strict'
+
+          // Fetch all the forms we want to apply custom Bootstrap validation styles to
+          const forms = document.querySelectorAll('.needs-validation')
+
+          // Loop over them and prevent submission
+          Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+              if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+              }
+
+              form.classList.add('was-validated')
+            }, false)
+          })
+        })()
+    </script>
 </body>
 </html>
