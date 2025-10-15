@@ -22,21 +22,15 @@
             --sidebar-collapsed-width: 80px;
             --sidebar-expanded-width: 250px;
         }
-
-        html, body {
-            height: 100%; /* Make sure html and body can fill the viewport */
-        }
-
+        html, body { height: 100%; }
         body { 
             font-family: 'Roboto', sans-serif; 
             background-color: var(--page-bg); 
             color: var(--text-primary);
         }
-
-        /* --- SIDEBAR STYLES (Unchanged) --- */
         .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-collapsed-width); background-color: var(--sidebar-bg); padding: 1rem 0; display: flex; flex-direction: column; align-items: center; transition: width 0.3s ease; z-index: 1000; overflow: hidden; }
         .sidebar:hover { width: var(--sidebar-expanded-width); align-items: flex-start; }
-        .sidebar-brand { color: var(--sidebar-text-color); font-weight: 700; font-size: 1.5rem; margin-bottom: 2rem; width: 100%; text-align: center; white-space: nowrap; }
+        .sidebar-brand { color: var(--sidebar-text-color); font-weight: 700; font-size: 1.5rem; margin-bottom: 2rem; width: 100%; text-align: center; white-space: nowrap; text-decoration: none; }
         .sidebar-brand .brand-icon { font-size: 2rem; }
         .sidebar-brand .brand-text { display: none; margin-left: 10px; }
         .sidebar:hover .sidebar-brand { text-align: left; padding-left: 20px; }
@@ -49,36 +43,10 @@
         .sidebar:hover .nav-link .link-text { display: inline; }
         .nav-link:hover { background-color: var(--sidebar-hover-bg); color: #fff; }
         .nav-link.active { background-color: var(--sidebar-active-bg); color: var(--text-primary); }
-
-        /* --- NEW: WRAPPER FOR FLEXBOX LAYOUT --- */
-        .page-wrapper {
-            margin-left: var(--sidebar-collapsed-width);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Ensure it takes at least the full viewport height */
-            transition: margin-left 0.3s ease;
-        }
-
-        .sidebar:hover ~ .page-wrapper {
-            margin-left: var(--sidebar-expanded-width);
-        }
-
-        /* --- CONTENT & FOOTER ADJUSTMENTS --- */
-        .main-content {
-            padding: 2rem;
-            flex-grow: 1; /* This is the key: makes the main content expand to fill available space */
-        }
-        
-        .app-footer { 
-            background-color: #ffffff; 
-            border-top: 1px solid #d1e8ea;
-            color: var(--text-secondary); 
-            padding: 1rem 0; 
-            font-size: 0.9rem; 
-            text-align: center; 
-            flex-shrink: 0; /* Prevents the footer from shrinking */
-        }
-
+        .page-wrapper { margin-left: var(--sidebar-collapsed-width); display: flex; flex-direction: column; min-height: 100vh; transition: margin-left 0.3s ease; }
+        .sidebar:hover ~ .page-wrapper { margin-left: var(--sidebar-expanded-width); }
+        .main-content { padding: 2rem; flex-grow: 1; }
+        .app-footer { background-color: #ffffff; border-top: 1px solid #d1e8ea; color: var(--text-secondary); padding: 1rem 0; font-size: 0.9rem; text-align: center; flex-shrink: 0; }
         .display-4 { color: var(--text-primary); min-height: 72px; }
         .display-4 .fw-bold { color: var(--primary-accent); border-bottom: 4px solid var(--primary-accent); padding-bottom: 5px; }
         .typed-cursor { color: var(--primary-accent); opacity: 1; font-weight: 400; animation: typed-blink 0.7s infinite; }
@@ -91,6 +59,7 @@
             <i class="fa-solid fa-truck-fast brand-icon"></i>
             <span class="brand-text">Postal AI</span>
         </a>
+        
         <ul class="sidebar-nav">
             <li class="nav-item">
                 <a class="nav-link active" href="{{ url_for('admin_home') }}">
@@ -99,25 +68,35 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('manage_bins') }}">
+                    <i class="fa-solid fa-boxes-packing"></i>
+                    <span class="link-text">Manage Bins</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('manage_staff') }}">
                     <i class="fa-solid fa-users-gear"></i>
                     <span class="link-text">Manage Staff</span>
                 </a>
             </li>
+            
+            <!-- =============================================================== -->
+            <!-- THIS IS THE CORRECTED LINK THAT FIXES THE ERROR -->
+            <!-- =============================================================== -->
             <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('view_sorted_history') }}">
+                <a class="nav-link" href="{{ url_for('admin_sorted_history') }}">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span class="link-text">View History</span>
                 </a>
             </li>
         </ul>
+        
         <a class="nav-link" href="{{ url_for('logout') }}">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span class="link-text">Logout</span>
         </a>
     </div>
 
-    <!-- ADDED: The new page-wrapper div -->
     <div class="page-wrapper">
         <main class="main-content">
             <div class="text-center" style="padding-top: 10rem;">
@@ -128,7 +107,7 @@
         <footer class="app-footer">
             <small>&copy; 2024 Postal AI. All rights reserved.</small>
         </footer>
-    </div> <!-- END: page-wrapper div -->
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>

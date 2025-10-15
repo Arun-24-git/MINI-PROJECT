@@ -149,27 +149,25 @@
                     <span class="link-text">Home</span>
                 </a>
             </li>
-
-            <!-- COMBINED LOGIC: The link is only shown if you are NOT on the upload page. -->
-            {% if request.path != url_for('upload_capture') %}
             <li>
-                <a href="{{ url_for('upload_capture') }}">
+                <a href="{{ url_for('upload_capture') }}" class="{% if request.path == url_for('upload_capture') %}active{% endif %}">
                     <i class="fas fa-camera"></i>
                     <span class="link-text">Capture/Upload</span>
                 </a>
             </li>
-            {% endif %}
-            
             <li>
                 <a href="{{ url_for('view_bins') }}" class="{% if request.path == url_for('view_bins') %}active{% endif %}">
                     <i class="fas fa-box"></i>
                     <span class="link-text">View Bins</span>
                 </a>
             </li>
+            <!-- =============================================================== -->
+            <!-- THIS IS THE CORRECTED LINK -->
+            <!-- =============================================================== -->
             <li>
-                <a href="{{ url_for('view_sorted_items') }}" class="{% if request.path == url_for('view_sorted_items') %}active{% endif %}">
+                <a href="{{ url_for('view_sorted_history') }}" class="{% if request.path == url_for('view_sorted_history') %}active{% endif %}">
                     <i class="fas fa-check-double"></i>
-                    <span class="link-text">Sorted Items</span>
+                    <span class="link-text">Sorted History</span>
                 </a>
             </li>
         </ul>
@@ -177,7 +175,7 @@
         <!-- Footer with Logout Button -->
         <div class="sidebar-footer">
             <a href="{{ url_for('logout') }}" style="display:flex; align-items:center; text-decoration:none; color: var(--text-light);">
-                <i class="fas fa-sign-out-alt"></i>
+                <i class="fas fa-sign-out-alt" style="width: var(--sidebar-collapsed-width); text-align: center; font-size: 1.4rem;"></i>
                 <span class="link-text">Logout</span>
             </a>
         </div>

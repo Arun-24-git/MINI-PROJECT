@@ -3,14 +3,12 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- (The rest of the initial HTML structure remains the same) -->
     <div class="text-center mb-4">
         <h2>Capture Postal Letter Image</h2>
         <p class="text-muted">Use the camera to add images to the queue, then start processing.</p>
     </div>
 
     <div class="row g-4 justify-content-center">
-        <!-- Capture Card -->
         <div class="col-md-6">
             <div class="card h-100 text-center shadow-sm">
                 <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
@@ -23,23 +21,12 @@
         </div>
     </div>
 
-    <!-- Image Queue Section -->
     <div class="row mt-5 justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4><i class="fas fa-list-alt me-2"></i>Image Queue (<span id="queue-count">0</span>)</h4>
-                </div>
-                <div class="card-body" id="image-queue-body">
-                    <ul class="list-group" id="image-queue-list">
-                        <li class="list-group-item text-center text-muted" id="empty-queue-message">Your queue is empty.</li>
-                    </ul>
-                </div>
-                <div class="card-footer text-center">
-                    <button class="btn btn-lg btn-info" id="startProcessingBtn" disabled>
-                        <i class="fas fa-cogs me-2"></i>Start Processing
-                    </button>
-                </div>
+                <div class="card-header"><h4><i class="fas fa-list-alt me-2"></i>Image Queue (<span id="queue-count">0</span>)</h4></div>
+                <div class="card-body" id="image-queue-body"><ul class="list-group" id="image-queue-list"><li class="list-group-item text-center text-muted" id="empty-queue-message">Your queue is empty.</li></ul></div>
+                <div class="card-footer text-center"><button class="btn btn-lg btn-info" id="startProcessingBtn" disabled><i class="fas fa-cogs me-2"></i>Start Processing</button></div>
             </div>
         </div>
     </div>
@@ -61,9 +48,7 @@
                     <canvas id="camera-canvas" style="display:none;"></canvas>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="captureBtn">
-                        <i class="fas fa-camera-retro"></i> Capture Photo
-                    </button>
+                    <button type="button" class="btn btn-primary" id="captureBtn"><i class="fas fa-camera-retro"></i> Capture Photo</button>
                 </div>
             </div>
         </div>
@@ -74,37 +59,82 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Review and Correct Pincodes</h5>
+                    <h5 class="modal-title">Processing Completed</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="resultsModalBody">
-                    <!-- Results table will be injected here -->
+                <div class="modal-body">
+                    <p class="text-muted">The extracted address and pincode for all pictures are shown below. Please verify, correct any errors, and click 'Sort'.</p>
+                    <div id="results-container" class="list-group">
+                        <!-- Results will be injected here by JavaScript -->
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <div id="finalize-status" class="me-auto"></div>
+                    <div id="finalize-status" class="me-auto fw-bold"></div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="finalizeBtn">
-                        <i class="fas fa-check-circle me-2"></i>Confirm & Save All
+                    <button type="button" class="btn btn-primary" id="sortBtn">
+                        <i class="fas fa-check-double me-2"></i>Sort
                     </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- NEW: Full-page loading overlay for animation transition -->
+<div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Preparing Sorting Animation...</p>
+</div>
 {% endblock %}
 
 {% block scripts %}
+{{ super() if super }}
 <style>
-    /* (All existing styles remain the same) */
-     #camera-feed { max-height: 65vh; object-fit: contain; background-color: #000; }
+    #camera-feed { max-height: 65vh; object-fit: contain; background-color: #000; }
     #camera-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
     .focus-box { width: 80%; height: 50%; border: 3px dashed rgba(255, 255, 255, 0.7); border-radius: 10px; }
     #capture-instructions { color: white; background-color: rgba(0, 0, 0, 0.5); padding: 5px 10px; border-radius: 5px; margin-top: 15px; font-weight: bold; }
+    .result-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; }
+    .result-item-img { width: 100px; height: 75px; object-fit: cover; border-radius: 0.25rem; border: 1px solid #dee2e6; }
+    .result-item-content { flex-grow: 1; }
+    .result-item-address { white-space: pre-wrap; font-size: 0.9rem; max-height: 80px; overflow-y: auto; background-color: #f8f9fa; padding: 0.5rem; border-radius: 0.25rem; }
+
+    /* --- CSS for the Loading Overlay --- */
+    #loading-overlay {
+        position: fixed; /* Cover the entire viewport */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+        z-index: 9999; /* Ensure it's on top of everything */
+        display: none; /* Hidden by default */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: #333;
+        font-size: 1.2rem;
+    }
+
+    .loading-spinner {
+        border: 8px solid #f3f3f3; /* Light grey */
+        border-top: 8px solid #0d6efd; /* Blue */
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // (All existing constants and functions for camera and queue management remain the same)
+    // --- SETUP AND CONSTANTS ---
     const queueList = document.getElementById('image-queue-list');
     const emptyMessage = document.getElementById('empty-queue-message');
     const queueCountSpan = document.getElementById('queue-count');
@@ -112,35 +142,46 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const openCameraBtn = document.getElementById('openCameraBtn');
     const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
-    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
     const closeCameraBtn = document.getElementById('closeCameraBtn');
     const videoElement = document.getElementById('camera-feed');
     const canvasElement = document.getElementById('camera-canvas');
     const captureBtn = document.getElementById('captureBtn');
-    const finalizeBtn = document.getElementById('finalizeBtn');
-    let stream = null; 
+    
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    const sortBtn = document.getElementById('sortBtn');
 
+    let stream = null; 
     let imageQueue = [];
 
+    // --- CAMERA AND QUEUE LOGIC ---
     function addFileToQueue(file) {
-        imageQueue.push(file);
-        if (imageQueue.length > 0) { emptyMessage.style.display = 'none'; }
-        const listItem = document.createElement('li');
-        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
         const reader = new FileReader();
         reader.onload = function(e) {
+            imageQueue.push({ file: file, dataURL: e.target.result });
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
             listItem.innerHTML = `<span><img src="${e.target.result}" alt="${file.name}" width="50" class="me-3 rounded">${file.name}</span><button class="btn btn-sm btn-danger remove-btn">&times;</button>`;
-            queueList.appendChild(listItem);
+            
             listItem.querySelector('.remove-btn').addEventListener('click', () => {
-                const index = imageQueue.indexOf(file);
-                if (index > -1) { imageQueue.splice(index, 1); }
+                const index = imageQueue.findIndex(item => item.file === file);
+                if (index > -1) imageQueue.splice(index, 1);
                 listItem.remove();
                 updateQueueState();
             });
+
+            if (emptyMessage) emptyMessage.style.display = 'none';
+            queueList.appendChild(listItem);
+            updateQueueState();
         };
         reader.readAsDataURL(file);
-        updateQueueState();
     }
+    
+    const updateQueueState = () => {
+        const count = imageQueue.length;
+        queueCountSpan.textContent = count;
+        startBtn.disabled = count === 0;
+        if (emptyMessage) emptyMessage.style.display = count === 0 ? 'block' : 'none';
+    };
 
     openCameraBtn.addEventListener('click', async () => {
         try {
@@ -166,17 +207,11 @@ document.addEventListener('DOMContentLoaded', function() {
     closeCameraBtn.addEventListener('click', stopCamera);
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
 
-    const updateQueueState = () => {
-        queueCountSpan.textContent = imageQueue.length;
-        startBtn.disabled = imageQueue.length === 0;
-        if (imageQueue.length === 0) { emptyMessage.style.display = 'block'; }
-    };
-
     startBtn.addEventListener('click', async () => {
         startBtn.disabled = true;
         startBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
         const formData = new FormData();
-        imageQueue.forEach(file => formData.append('images[]', file));
+        imageQueue.forEach(item => formData.append('images[]', item.file));
         try {
             const response = await fetch("{{ url_for('process_queue') }}", { method: 'POST', body: formData });
             if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
@@ -184,44 +219,46 @@ document.addEventListener('DOMContentLoaded', function() {
             displayResultsInModal(results);
         } catch (error) {
             alert('Processing failed: ' + error.message);
-        }
-        finally {
+        } finally {
             startBtn.disabled = false;
             startBtn.innerHTML = '<i class="fas fa-cogs me-2"></i>Start Processing';
         }
     });
 
     function displayResultsInModal(results) {
-        const modalBody = document.getElementById('resultsModalBody');
-        let tableHTML = `<table class="table table-bordered align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Original Filename</th>
-                                    <th>Extracted Address</th>
-                                    <th>PINCODE (Editable)</th>
-                                </tr>
-                            </thead>
-                         <tbody>`;
-        results.forEach(res => {
+        const container = document.getElementById('results-container');
+        container.innerHTML = '';
+
+        results.forEach((res, index) => {
+            const imgSrc = imageQueue[index] ? imageQueue[index].dataURL : '';
             const pincodeValue = res.extracted_pincode && res.extracted_pincode !== 'Not Found' ? res.extracted_pincode : '';
-            tableHTML += `<tr class="result-row" data-image-path="${res.image_path}" data-full-address="${res.extracted_address || ''}">
-                            <td>${res.original_filename}</td>
-                            <td><pre>${res.extracted_address || 'N/A'}</pre></td>
-                            <td>
-                                <input type="text" class="form-control pincode-input" 
-                                       value="${pincodeValue}" 
-                                       placeholder="Enter 6-digit pincode" maxlength="6">
-                            </td>
-                         </tr>`;
+            const hasError = res.status !== 'Success' || !pincodeValue;
+
+            const resultItemHTML = `
+                <div class="list-group-item result-item ${hasError ? 'list-group-item-danger' : ''}" 
+                     data-image-path="${res.image_path}" 
+                     data-full-address="${res.extracted_address || ''}">
+                    <img src="${imgSrc}" alt="${res.original_filename}" class="result-item-img">
+                    <div class="result-item-content">
+                        <label class="form-label small">Extracted Address</label>
+                        <div class="result-item-address">${res.extracted_address || 'N/A'}</div>
+                    </div>
+                    <div class="w-25">
+                         <label for="pincode-${index}" class="form-label small">${hasError ? '<b>Enter Pincode</b>' : 'Pincode'}</label>
+                         <input type="text" id="pincode-${index}" class="form-control pincode-input" 
+                                value="${pincodeValue}" placeholder="6 digits" maxlength="6">
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', resultItemHTML);
         });
-        tableHTML += '</tbody></table>';
-        modalBody.innerHTML = tableHTML;
+
         document.getElementById('finalize-status').innerHTML = '';
         resultsModal.show();
     }
 
-    finalizeBtn.addEventListener('click', async () => {
-        const rows = document.querySelectorAll('#resultsModalBody .result-row');
+    // --- FULLY UPDATED sortBtn EVENT LISTENER ---
+    sortBtn.addEventListener('click', async () => {
+        const rows = document.querySelectorAll('#results-container .result-item');
         const parcelsToFinalize = [];
         let hasError = false;
 
@@ -230,8 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const pincode = pincodeInput.value.trim();
             pincodeInput.classList.remove('is-invalid');
 
-            // A pincode is only invalid if it's NOT empty and NOT 6 digits. Empty is OK.
-            if (pincode && !/^\d{6}$/.test(pincode)) {
+            // A pincode is only invalid if it's NOT empty and NOT exactly 6 digits.
+            if (pincode && pincode.length !== 6) { 
                 pincodeInput.classList.add('is-invalid');
                 hasError = true;
             }
@@ -244,34 +281,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (hasError) {
-            alert('Please correct the invalid pincodes. They must be 6 digits or left empty.');
+            alert('Please correct the highlighted pincodes. A pincode must be exactly 6 digits or left empty if unknown.');
             return;
         }
 
-        const statusDiv = document.getElementById('finalize-status');
-        finalizeBtn.disabled = true;
-        statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+        // Hide the results modal immediately.
+        resultsModal.hide();
+        
+        // Show our full-page loading overlay.
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.style.display = 'flex';
 
         try {
-            const response = await fetch("{{ url_for('finalize_parcels') }}", {
+            const response = await fetch("{{ url_for('finalize_and_sort') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ parcels: parcelsToFinalize })
             });
             const result = await response.json();
-            if (!response.ok || !result.success) throw new Error(result.message || 'Failed to save data.');
-            statusDiv.innerHTML = `<span class="text-success">${result.message}</span>`;
-            setTimeout(() => {
-                resultsModal.hide();
-                imageQueue = [];
-                queueList.innerHTML = '';
-                updateQueueState();
-            }, 1500);
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Failed to save data.');
+            }
+
+            // The browser will now navigate to the animation page.
+            window.location.href = result.redirect_url;
 
         } catch (error) {
-            statusDiv.innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
-        } finally {
-            finalizeBtn.disabled = false;
+            // If something goes wrong, hide the overlay and show an error.
+            loadingOverlay.style.display = 'none';
+            alert(`Error: ${error.message}`);
         }
     });
 });

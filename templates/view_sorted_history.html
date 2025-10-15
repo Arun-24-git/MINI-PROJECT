@@ -1,0 +1,83 @@
+{% extends 'staff_layout.html' %}
+{% block title %}Sorted History - Today's Records{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Sorted History – Today's Records</h2>
+
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="🔎 Search by bin name...">
+    </div>
+
+    <!-- Results Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 5%;">SL. NO</th>
+                            <th scope="col" style="width: 15%;">BIN NAME</th>
+                            <th scope="col">ADDRESS</th>
+                            <th scope="col" style="width: 15%;">PINCODE</th>
+                            <th scope="col" style="width: 15%;">TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        {% if items %}
+                            {% for item in items %}
+                            <tr>
+                                <td class="text-center">{{ loop.index }}</td>
+                                <td>{{ item.bin_name }}</td>
+                                <td style="white-space: pre-wrap;">{{ item.full_address }}</td>
+                                <td>{{ item.pincode }}</td>
+                                <!-- Format the time to be more readable -->
+                                <td>{{ item.sorted_time.strftime('%I:%M:%S %p') }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted p-4">
+                                    You have not sorted any items today.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('historyTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+
+    // This function will filter the table based on the search input
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+
+        for (let i = 0; i < rows.length; i++) {
+            // The 'Bin Name' is in the second column (index 1)
+            const binNameCell = rows[i].getElementsByTagName('td')[1];
+            
+            if (binNameCell) {
+                const binName = binNameCell.textContent.toLowerCase();
+                // If the bin name includes the search term, show the row, otherwise hide it
+                if (binName.includes(searchTerm)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

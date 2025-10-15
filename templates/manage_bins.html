@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bins - Postal AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #128494;
+            --sidebar-hover-bg: #00b7c2;
+            --sidebar-active-bg: #4ef037;
+            --sidebar-icon-color: #ecfeff;
+            --sidebar-text-color: #ecfeff;
+            --page-bg: #ecfeff;
+            --primary-accent: #00b7c2;
+            --text-primary: #1E293B;
+            --sidebar-collapsed-width: 80px;
+            --sidebar-expanded-width: 250px;
+        }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--page-bg); color: var(--text-primary); }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-collapsed-width); background-color: var(--sidebar-bg); padding: 1rem 0; display: flex; flex-direction: column; align-items: center; transition: width 0.3s ease; z-index: 1000; }
+        .sidebar:hover { width: var(--sidebar-expanded-width); align-items: flex-start; }
+        .sidebar-brand { color: #ecfeff; font-weight: 700; font-size: 1.5rem; margin-bottom: 2rem; width: 100%; text-align: center; white-space: nowrap; text-decoration: none; }
+        .sidebar-brand .brand-icon { font-size: 2rem; }
+        .sidebar-brand .brand-text { display: none; margin-left: 10px; }
+        .sidebar:hover .sidebar-brand .brand-text { display: inline; }
+        .sidebar-nav { list-style: none; padding: 0; width: 100%; flex-grow: 1; }
+        .nav-link { display: flex; align-items: center; color: #ecfeff; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+        .nav-link i { min-width: var(--sidebar-collapsed-width); font-size: 1.5rem; text-align: center; }
+        .nav-link .link-text { display: none; margin-left: 10px; }
+        .sidebar:hover .nav-link .link-text { display: inline; }
+        .nav-link:hover { background-color: var(--sidebar-hover-bg); }
+        .nav-link.active { background-color: var(--sidebar-active-bg); color: var(--text-primary); } /* Correct active style */
+        .main-content { margin-left: var(--sidebar-collapsed-width); transition: margin-left 0.3s ease; padding: 2rem; }
+        .sidebar:hover ~ .main-content { margin-left: var(--sidebar-expanded-width); }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="{{ url_for('admin_home') }}" class="sidebar-brand">
+            <i class="fa-solid fa-truck-fast brand-icon"></i><span class="brand-text">Postal AI</span>
+        </a>
+        <ul class="sidebar-nav">
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_home') }}"><i class="fa-solid fa-house-chimney"></i><span class="link-text">Home</span></a></li>
+            <li class="nav-item"><a class="nav-link active" href="{{ url_for('manage_bins') }}"><i class="fa-solid fa-boxes-packing"></i><span class="link-text">Manage Bins</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_staff') }}"><i class="fa-solid fa-users-gear"></i><span class="link-text">Manage Staff</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('view_sorted_history') }}"><i class="fa-solid fa-clock-rotate-left"></i><span class="link-text">View History</span></a></li>
+        </ul>
+        <a class="nav-link" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span class="link-text">Logout</span></a>
+    </div>
+
+    <div class="main-content">
+        <h2 class="mb-4">Manage Sorting Bins</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}{% endwith %}
+
+        <div class="card shadow-sm mb-5">
+            <div class="card-header"><h5 class="mb-0">Create a New Bin</h5></div>
+            <div class="card-body">
+                <form action="{{ url_for('manage_bins') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="pin" class="form-label"><b>Full 6-Digit Pincode</b> (e.g., 673001)</label>
+                        <input type="text" class="form-control" id="pin" name="pin"
+                               placeholder="Enter exactly 6 digits" required minlength="6" maxlength="6" pattern="\d{6}">
+                        <div class="form-text">Each unique 6-digit pincode will have its own bin.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--primary-accent); border: none;"><i class="fas fa-plus-circle me-2"></i>Create Bin</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0">Existing Bins</h5></div>
+            <div class="card-body">
+                {% if bins %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead><tr><th>Bin Name</th><th>Pincode</th><th class="text-end">Actions</th></tr></thead>
+                        <tbody>
+                            {% for bin in bins %}
+                            <tr>
+                                <td>{{ bin.bin_name }}</td>
+                                <td>{{ bin.pin }}</td>
+                                <td class="text-end">
+                                    <form action="{{ url_for('delete_bin', bin_id=bin.bin_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this bin?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt"></i> Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p class="text-center text-muted">No bins have been created yet. Use the form above to add one.</p>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

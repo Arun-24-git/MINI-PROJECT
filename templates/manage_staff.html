@@ -11,11 +11,13 @@
         .navbar { background-color: #2c3e50; }
         .navbar-nav .nav-link { color: #ecf0f1; font-weight: 500; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; }
+        /* Add cursor pointers to make the radio buttons more user-friendly */
+        .status-form .form-check-label { cursor: pointer; }
+        .status-form .form-check-input { cursor: pointer; }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
-        <!-- (Navbar content remains the same) -->
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('admin_home') }}">POSTAL AI</a>
             <div class="collapse navbar-collapse" id="adminNavbar">
@@ -54,11 +56,9 @@
                         <h5 class="mb-0">Add New Staff Member</h5>
                     </div>
                     <div class="card-body">
-                        <!-- === MODIFICATION: Add novalidate and a form class === -->
                         <form method="POST" action="{{ url_for('manage_staff') }}" class="needs-validation" novalidate>
                             <div class="mb-3">
                                 <label for="staff_name" class="form-label">Full Name</label>
-                                <!-- === MODIFICATION: Add validation attributes === -->
                                 <input type="text" class="form-control" id="staff_name" name="staff_name" 
                                        required minlength="2" maxlength="50" pattern="^[a-zA-Z\s]{2,50}$"
                                        title="Name must be 2-50 characters (letters and spaces only).">
@@ -66,7 +66,6 @@
                             </div>
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Phone Number</label>
-                                <!-- === MODIFICATION: Add validation attributes === -->
                                 <input type="text" class="form-control" id="phone" name="phone" 
                                        required pattern="^\d{10,13}$"
                                        title="Phone number must be 10 to 13 digits.">
@@ -75,7 +74,6 @@
                             <hr>
                             <div class="mb-3">
                                 <label for="username" class="form-label">Username</label>
-                                <!-- === MODIFICATION: Add validation attributes === -->
                                 <input type="text" class="form-control" id="username" name="username" 
                                        required minlength="4" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
                                        title="Username must be 4-20 characters (letters, numbers, underscore).">
@@ -83,7 +81,6 @@
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <!-- === MODIFICATION: Add validation attributes === -->
                                 <input type="password" class="form-control" id="password" name="password" 
                                        required minlength="6"
                                        title="Password must be at least 6 characters long.">
@@ -97,14 +94,20 @@
 
             <!-- Existing Staff List -->
             <div class="col-lg-8">
-                <!-- (This part remains the same) -->
                 <div class="card">
                     <div class="card-header"><h5 class="mb-0">Current Staff List</h5></div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                            <table class="table table-striped table-hover align-middle">
                                 <thead>
-                                    <tr><th>ID</th><th>Name</th><th>Username</th><th>Phone</th><th>Status</th><th>Joined On</th></tr>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Username</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Joined On</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {% for staff in staff_list %}
@@ -113,8 +116,27 @@
                                         <td>{{ staff.staff_name }}</td>
                                         <td>{{ staff.username }}</td>
                                         <td>{{ staff.phone }}</td>
-                                        <td><span class="badge bg-{{ 'success' if staff.status == 'active' else 'secondary' }}">{{ staff.status | capitalize }}</span></td>
-                                        <td>{{ staff.joined_date.strftime('%Y-%m-d') }}</td>
+                                        <!-- ====================================================== -->
+                                        <!-- === MODIFICATION: Interactive status update form === -->
+                                        <!-- ====================================================== -->
+                                        <td>
+                                            <form method="POST" action="{{ url_for('update_staff_status', staff_id=staff.staff_id) }}" class="status-form m-0">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="status" 
+                                                           id="active_{{ staff.staff_id }}" value="active" 
+                                                           {% if staff.status == 'active' %}checked{% endif %}>
+                                                    <label class="form-check-label" for="active_{{ staff.staff_id }}">Active</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="status" 
+                                                           id="inactive_{{ staff.staff_id }}" value="inactive" 
+                                                           {% if staff.status == 'inactive' %}checked{% endif %}>
+                                                    <label class="form-check-label" for="inactive_{{ staff.staff_id }}">Inactive</label>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <!-- ===================== END MODIFICATION ===================== -->
+                                        <td>{{ staff.joined_date.strftime('%Y-%m-%d') }}</td>
                                     </tr>
                                     {% else %}
                                         <tr><td colspan="6" class="text-center text-muted">No staff members in the database.</td></tr>
@@ -129,27 +151,39 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- === MODIFICATION: Add Bootstrap validation script === -->
+    <!-- Bootstrap validation script for the "Add Staff" form -->
     <script>
-        // Example starter JavaScript for disabling form submissions if there are invalid fields
         (() => {
           'use strict'
-
-          // Fetch all the forms we want to apply custom Bootstrap validation styles to
           const forms = document.querySelectorAll('.needs-validation')
-
-          // Loop over them and prevent submission
           Array.from(forms).forEach(form => {
             form.addEventListener('submit', event => {
               if (!form.checkValidity()) {
                 event.preventDefault()
                 event.stopPropagation()
               }
-
               form.classList.add('was-validated')
             }, false)
           })
         })()
     </script>
+    
+    <!-- =================================================================== -->
+    <!-- === NEW SCRIPT: Auto-submits the status form when changed ===       -->
+    <!-- =================================================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Find all radio buttons within the status forms
+            const radioButtons = document.querySelectorAll('.status-form .form-check-input');
+            
+            // Add a 'change' event listener to each radio button
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // When a radio is changed, find its parent form and submit it
+                    this.closest('form').submit();
+                });
+            });
+        });
+    </script>
 </body>
-</html>
+</html>```
